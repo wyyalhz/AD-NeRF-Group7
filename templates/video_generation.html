@@ -1,90 +1,329 @@
 <!DOCTYPE html>
 <html lang="zh">
-
 <head>
     <meta charset="UTF-8">
-    <title>视频生成界面</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <title>视频生成</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-primary: #0a0a0a;
+            --bg-secondary: #0f0f0f;
+            --card-bg: #151515;
+            --border: #252525;
+            --text-primary: #d0d0d0;
+            --text-secondary: #999999;
+            --accent: #2a5fa8;
+            --accent-hover: #1e4a7a;
+        }
+
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        /* 导航栏 */
+        .navbar {
+            background: var(--bg-secondary);
+            padding: 15px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .nav-container {
+            width: 90%; max-width: 1200px; margin: 0 auto;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .logo { color: var(--accent); font-size: 24px; font-weight: bold; }
+        .nav-links { display: flex; gap: 30px; }
+        .nav-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            transition: all 0.3s;
+        }
+        .nav-link:hover { background: var(--border); color: #fff; }
+        .nav-link.active { background: var(--border); color: var(--accent); }
+
+        /* 主容器 */
+        .container {
+            width: 90%; max-width: 1200px; margin: 30px auto;
+            background: var(--card-bg);
+            padding: 30px; border-radius: 10px;
+            border: 1px solid var(--border);
+        }
+
+        .page-title {
+            font-size:24px; color:var(--accent);
+            margin-bottom:25px; padding-bottom:10px;
+            border-bottom:1px solid var(--border);
+        }
+
+        /* 双栏布局 */
+        .page-content {
+            display:grid; grid-template-columns:3fr 2fr; gap:30px;
+        }
+
+        /* 视频区 */
+        .video-section {
+            background: var(--bg-secondary);
+            border:1px solid var(--border);
+            border-radius:10px; padding:20px;
+        }
+        .video-title { color:var(--text-secondary); margin-bottom:12px; }
+        .video-box {
+            background:#0c0c0c; border-radius:8px;
+            height:420px; display:flex;
+            justify-content:center; align-items:center;
+            overflow:hidden;
+        }
+        #outputVideo {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        /* 控制面板 */
+        .control-panel {
+            background: var(--bg-secondary);
+            border:1px solid var(--border);
+            border-radius:10px; padding:25px;
+        }
+        .form-group { margin-bottom:22px; }
+        .form-label { display:block; margin-bottom:8px; color:var(--text-secondary); font-weight:bold; }
+        .form-input, select.form-input, textarea.form-input {
+            width:100%; padding:12px; background:#0c0c0c;
+            border:1px solid #2a2a2a; border-radius:6px;
+            color:var(--text-primary); font-size:14px;
+        }
+        .form-input:focus {
+            outline:none; border-color:var(--accent);
+            box-shadow:0 0 0 2px rgba(42,95,168,.2);
+        }
+        textarea.form-input { min-height:120px; resize:vertical; }
+        .btn-submit {
+            width:100%; background:var(--accent);
+            color:#fff; border:none; padding:15px;
+            border-radius:8px; font-size:16px; cursor:pointer;
+            transition:0.3s;
+        }
+        .btn-submit:hover { background:var(--accent-hover); }
+        
+        /* 返回首页按钮 */
+        .btn-home {
+            width:100%; 
+            background:transparent;
+            color:var(--text-secondary); 
+            border:1px solid var(--border); 
+            padding:15px;
+            border-radius:8px; 
+            font-size:16px; 
+            cursor:pointer;
+            transition:0.3s; 
+            margin-top:10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn-home:hover {
+            background:var(--border); 
+            color:#fff;
+        }
+
+        /* 加载 & 消息 */
+        .loading {
+            position:fixed; inset:0; background:rgba(0,0,0,0.92);
+            display:none; justify-content:center; align-items:center; z-index:1000;
+        }
+        .loading-content { background:var(--card-bg); padding:35px; border-radius:12px; text-align:center; border:1px solid var(--border); }
+        .spinner {
+            width:48px; height:48px; border:5px solid #2a2a2a;
+            border-top:5px solid var(--accent); border-radius:50%;
+            animation:spin 1s linear infinite; margin-bottom:15px;
+        }
+        @keyframes spin { to { transform:rotate(360deg); } }
+
+        .message {
+            position:fixed; top:20px; right:20px;
+            background:var(--card-bg); padding:15px 25px;
+            border-radius:8px; border:1px solid var(--border);
+            box-shadow:0 4px 15px rgba(0,0,0,0.5);
+            display:none; z-index:1001;
+        }
+
+        @media (max-width: 768px) {
+            .page-content { grid-template-columns:1fr; }
+        }
+    </style>
 </head>
-
-<body class="subpage-bg">
-    <h2>视频生成界面</h2>
-    <div class="video-page-container">
-        <!-- 左边视频显示 -->
-        <div class="video-display">
-            <video id="outputVideo" controls width="420">
-                <source src="{{ url_for('static', filename='videos/sample.mp4') }}" type="video/mp4">
-            </video>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">DATA HAMMER GROUP</div>
+            <div class="nav-links">
+                <a href="/" class="nav-link">首页</a>
+                <a href="/model_training" class="nav-link">训练模型</a>
+                <a href="/video_generation" class="nav-link active">视频生成</a>
+                <a href="/chat_system" class="nav-link">人机对话</a>
+            </div>
         </div>
+    </nav>
 
-        <!-- 右边输入表单 -->
-        <div class="form-section">
-            <form id="videoForm">
-                <div class="form-group">
-                    <label>模型名称</label>
-                    <select name="model_name">
-                        <option value="model1">Model 1</option>
-                        <option value="model2">Model 2</option>
-                        <option value="SyncTalk">SyncTalk</option>
-                    </select>
+    <div class="container">
+        <h2 class="page-title">视频生成</h2>
+        <div class="page-content">
+            <div class="video-section">
+                <div class="video-title">生成结果</div>
+                <div class="video-box">
+                    <video id="outputVideo" controls>
+                        <source src="static/videos/sample.mp4" type="video/mp4">
+                        您的浏览器不支持视频标签。
+                    </video>
                 </div>
+            </div>
 
-                <div class="form-group">
-                    <label>模型目录地址</label>
-                    <input type="text" name="model_param" placeholder="请输入模型目录路径">
-                </div>
+            <div class="control-panel">
+                <form id="videoForm">
+                    <div class="form-group">
+                        <label class="form-label">模型名称</label>
+                        <select name="model_name" class="form-input">
+                            <option value="model1">Model 1</option>
+                            <option value="model2">Model 2</option>
+                            <option value="SyncTalk">SyncTalk</option>
+                        </select>
+                    </div>
 
-                <div class="form-group">
-                    <label>参考音频地址</label>
-                    <input type="text" name="ref_audio" placeholder="请输入音频路径">
-                </div>
-                
-                <div class="form-group">
-                    <label>GPU选择</label>
-                    <select name="gpu_choice">
-                        <option value="GPU0">GPU 0</option>
-                        <option value="GPU1">GPU 1</option>
-                    </select>
-                </div>
+                    <div class="form-group">
+                        <label class="form-label">模型目录地址</label>
+                        <input type="text" name="model_param" class="form-input" placeholder="请输入模型目录路径" required>
+                    </div>
 
-                <div class="form-group">
-                    <label>目标文字（文本框）</label>
-                    <textarea name="target_text" placeholder="留空则直接使用参考音频"></textarea>
-                </div>
+                    <div class="form-group">
+                        <label class="form-label">参考音频地址</label>
+                        <input type="text" name="ref_audio" class="form-input" placeholder="请输入音频路径" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">GPU选择</label>
+                        <select name="gpu_choice" class="form-input">
+                            <option value="GPU0">GPU 0</option>
+                            <option value="GPU1">GPU 1</option>
+                        </select>
+                    </div>
 
-                <button type="submit" class="generate-btn">生成视频</button>
-            </form>
+                    <div class="form-group">
+                        <label class="form-label">目标文字</label>
+                        <textarea name="target_text" class="form-input" placeholder="留空则直接使用参考音频"></textarea>
+                    </div>
+
+                    <button type="submit" class="btn-submit">生成视频</button>
+                    <!-- 返回首页按钮 -->
+                    <button type="button" class="btn-home" onclick="window.location.href='/'">
+                        <i class="fas fa-home"></i> 返回首页
+                    </button>
+                </form>
+            </div>
         </div>
     </div>
 
+    <!-- 加载 & 消息 -->
+    <div class="loading" id="loading">
+        <div class="loading-content">
+            <div class="spinner"></div>
+            <div id="loading-text">生成中...</div>
+        </div>
+    </div>
+
+    <div class="message" id="message">
+        <div id="message-text"></div>
+    </div>
+
     <script>
+        // 工具函数
+        const loading = document.getElementById('loading');
+        const loadingText = document.getElementById('loading-text');
+        const message = document.getElementById('message');
+        const messageText = document.getElementById('message-text');
+
+        function showLoading(text = '处理中...') {
+            loadingText.textContent = text;
+            loading.style.display = 'flex';
+        }
+        function hideLoading() { loading.style.display = 'none'; }
+        function showMessage(text, time = 3500) {
+            messageText.textContent = text;
+            message.style.display = 'block';
+            setTimeout(() => message.style.display = 'none', time);
+        }
+
+        // 表单验证
+        function validateVideoForm(formData) {
+            const modelParam = formData.get('model_param');
+            const refAudio = formData.get('ref_audio');
+            
+            if (!modelParam || modelParam.trim() === '') {
+                showMessage('请输入模型目录路径');
+                return false;
+            }
+            
+            if (!refAudio || refAudio.trim() === '') {
+                showMessage('请输入参考音频路径');
+                return false;
+            }
+            
+            return true;
+        }
+
         document.getElementById('videoForm').addEventListener('submit', function (e) {
             e.preventDefault();
-
+            
             const formData = new FormData(this);
+            
+            // 验证表单
+            if (!validateVideoForm(formData)) {
+                return;
+            }
+            
+            showLoading('正在生成视频...');
 
             fetch('/video_generation', {
                 method: 'POST',
                 body: formData
             })
-                .then(res => res.json())
-                .then(data => {
-                    console.log("后端返回:", data);
-                    if (data.status === 'success') {
-                        const videoEl = document.getElementById('outputVideo');
-                        const newSrc = data.video_path + '?t=' + new Date().getTime();
-                        videoEl.src = newSrc;
-                        videoEl.load();
-                        videoEl.play().catch(err => console.warn('自动播放被阻止:', err));
-                    } else {
-                        alert('视频生成失败！');
-                    }
-                })
-                .catch(err => console.error('错误:', err));
+            .then(res => {
+                if (!res.ok) {
+                    throw new Error(`HTTP错误! 状态: ${res.status}`);
+                }
+                return res.json();
+            })
+            .then(data => {
+                hideLoading();
+                console.log("后端返回:", data);
+                if (data.status === 'success') {
+                    const videoEl = document.getElementById('outputVideo');
+                    // 加时间戳避免缓存
+                    const newSrc = data.video_path + '?t=' + new Date().getTime();
+                    videoEl.src = newSrc;
+                    videoEl.load();
+                    videoEl.play().catch(err => console.warn('自动播放被阻止:', err));
+                    showMessage('视频生成成功！');
+                } else {
+                    showMessage('视频生成失败: ' + (data.message || '未知错误'));
+                }
+            })
+            .catch(err => {
+                hideLoading();
+                console.error('请求错误:', err);
+                showMessage('请求失败: ' + err.message);
+            });
         });
-
     </script>
+</body>
+</html>
 
 </body>
+
 
 </html>
