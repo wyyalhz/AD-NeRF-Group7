@@ -189,15 +189,15 @@
                     <div class="form-group">
                         <label class="form-label">模型名称</label>
                         <select name="model_name" class="form-input">
-                            <option value="model1">Model 1</option>
+                            <option value="AD-NeRF">AD-NeRF</option>
                             <option value="model2">Model 2</option>
                             <option value="SyncTalk">SyncTalk</option>
                         </select>
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label">模型目录地址</label>
-                        <input type="text" name="model_param" class="form-input" placeholder="请输入模型目录路径" required>
+                        <label class="form-label">ID（人物/数据集名）</label>
+                        <input type="text" name="id" class="form-input" placeholder="例如：Obama" required>
                     </div>
 
                     <div class="form-group">
@@ -211,6 +211,11 @@
                             <option value="GPU0">GPU 0</option>
                             <option value="GPU1">GPU 1</option>
                         </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">推理帧数（test_size）</label>
+                        <input type="number" name="test_size" class="form-input" min="1" value="300" required>
                     </div>
 
                     <div class="form-group">
@@ -260,16 +265,22 @@
 
         // 表单验证
         function validateVideoForm(formData) {
-            const modelParam = formData.get('model_param');
+            const id = formData.get('id');
             const refAudio = formData.get('ref_audio');
+            const testSize = formData.get('test_size');
             
-            if (!modelParam || modelParam.trim() === '') {
-                showMessage('请输入模型目录路径');
+            if (!id || id.trim() === '') {
+                showMessage('请输入人物/数据集名');
                 return false;
             }
             
             if (!refAudio || refAudio.trim() === '') {
                 showMessage('请输入参考音频路径');
+                return false;
+            }
+            
+            if (!testSize || parseInt(testSize) < 1) {
+                showMessage('推理帧数必须大于0');
                 return false;
             }
             
@@ -321,9 +332,4 @@
         });
     </script>
 </body>
-</html>
-
-</body>
-
-
 </html>
