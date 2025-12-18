@@ -17,10 +17,11 @@ def video_generation():
     if request.method == 'POST':
         data = {
             "model_name": request.form.get('model_name'),
-            "model_param": request.form.get('model_param'),
+            "id": request.form.get('id'),
             "ref_audio": request.form.get('ref_audio'),
             "gpu_choice": request.form.get('gpu_choice'),
             "target_text": request.form.get('target_text'),
+            "test_size": request.form.get('test_size'),
         }
 
         video_path = generate_video(data)
@@ -35,10 +36,11 @@ def model_training():
     if request.method == 'POST':
         data = {
             "model_choice": request.form.get('model_choice'),
-            "ref_video": request.form.get('ref_video'),
+            "id": request.form.get('id'),
             "gpu_choice": request.form.get('gpu_choice'),
             "epoch": request.form.get('epoch'),
-            "custom_params": request.form.get('custom_params')
+            "custom_params": request.form.get('custom_params'),
+            "preprocess": request.form.get('preprocess'),
         }
 
         video_path = train_model(data)
@@ -86,4 +88,4 @@ def save_audio():
 
 
 if __name__ == '__main__':
-    app.run(debug=True, port = 5001)
+    app.run(host='0.0.0.0', port=6006, debug=True)
