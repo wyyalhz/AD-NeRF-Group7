@@ -55,17 +55,48 @@ def model_training():
 @app.route('/chat_system', methods=['GET', 'POST'])
 def chat_system():
     if request.method == 'POST':
+        
+        text = (request.form.get('text') or '').strip()
+        # 把前端文本写入 input.txt
+        if text:
+            os.makedirs('./static/text', exist_ok=True)
+            with open('./static/text/input.txt', 'w', encoding='utf-8') as f:
+                f.write(text)
+
         data = {
             "model_name": request.form.get('model_name'),
             "model_param": request.form.get('model_param'),
             "voice_clone": request.form.get('voice_clone'),
             "api_choice": request.form.get('api_choice'),
+            "text": text,  # 也直接传给 chat_engine（更稳）
         }
 
-        video_path = chat_response(data)
-        video_path = "/" + video_path.replace("\\", "/")
+        # video_path = chat_response(data)
+        try:
+            result = chat_response(data)  # 我们下面会让它返回 dict
+        except Exception as e:
+            return jsonify({'status': 'error', 'message': str(e)}), 500
 
-        return jsonify({'status': 'success', 'video_path': video_path})
+        # result 现在建议是 dict: {video_path, audio_path}
+        video_path = result.get("video_path", "")
+        audio_path = result.get("audio_path", "")
+
+        if video_path:
+            video_path = video_path.replace("\\", "/")
+            if not audio_path.startswith("/"):
+                video_path = "/" + video_path
+        
+        if audio_path:
+            audio_path = audio_path.replace("\\", "/")
+            # 避免变成 //static/... （浏览器会当成 http(s)://static/...）
+            if not audio_path.startswith("/"):
+                audio_path = "/" + audio_path
+
+        return jsonify({
+            'status': 'success',
+            'video_path': video_path,
+            'audio_path': audio_path,
+        })
 
     return render_template('chat_system.html')
 

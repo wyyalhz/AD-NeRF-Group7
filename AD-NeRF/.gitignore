@@ -1,0 +1,88 @@
+# -----------------------------
+# OS / Editor junk
+# -----------------------------
+.DS_Store
+Thumbs.db
+
+# VS Code / PyCharm / others
+.vscode/
+.idea/
+*.code-workspace
+
+# -----------------------------
+# Python bytecode / cache
+# -----------------------------
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyd
+*.pdb
+*.egg
+*.egg-info/
+dist/
+build/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# -----------------------------
+# Virtual environments
+# -----------------------------
+.venv/
+venv/
+env/
+env*/
+.conda/
+.venv*/
+.pythonenv/
+
+# -----------------------------
+# Logs / temp / debug
+# -----------------------------
+log/
+*.log
+tmp/
+temp/
+
+# -----------------------------
+# Model checkpoints / weights
+# -----------------------------
+checkpoints/
+ckpt/
+weights/
+runs/
+*.pth
+*.pt
+*.ckpt
+
+# -----------------------------
+# Data / generated results
+# (If you want to track small sample data, remove related lines)
+# -----------------------------
+data_util/face_tracking/3DMM/01_MorphableModel.mat
+data_util/face_tracking/3DMM/3DMM_info.npy
+Obama/
+Zhao/
+com_imgs/
+head_imgs/
+ori_imgs/
+parsing/
+
+logs/
+
+# *.avi
+# *.npy
+
+# -----------------------------
+# Local external repos / libs
+# -----------------------------
+pytorch3d/
+
+# -----------------------------
+# Env / config secrets
+# -----------------------------
+.env
+.env.*
+*.secret
+*.token

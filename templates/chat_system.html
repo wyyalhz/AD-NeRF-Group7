@@ -262,6 +262,11 @@
                             您的浏览器不支持视频标签。
                         </video>
                     </div>
+
+                <div class="video-title">对话音频</div>
+                    <div class="video-box">
+                        <audio id="chatAudio" controls></audio>
+                    </div>
                 </div>
 
                 <div class="voice-recorder">
@@ -305,9 +310,17 @@
                     <div class="form-group">
                         <label class="form-label">对话API选择</label>
                         <select name="api_choice" class="form-input">
+                            <option value="dummy">Dummy API</option>
+                            <option value="groq">Groq API</option>
+                            <option value="openrouter">OpenRouter API</option>
                             <option value="openai">OpenAI API</option>
-                            <option value="azure">Azure Speech API</option>
+                            <option value="zhipu">Zhipu AI API</option>
                         </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">文本输入（打字聊天）</label>
+                        <textarea name="text" class="form-input" rows="4" placeholder="在这里输入你想说的话..."></textarea>
                     </div>
 
                     <button type="submit" class="btn-submit">
@@ -461,6 +474,12 @@
                 return false;
             }
             
+            const text = (formData.get('text') || '').trim();
+            if (!text) {
+                showMessage('请输入聊天文本（或先录音）');
+                return false;
+            }
+
             return true;
         }
         
@@ -496,6 +515,15 @@
                         videoEl.load();
                         videoEl.play();
                     }
+
+                    const audioEl = document.getElementById('chatAudio');
+                    if (data.audio_path) {
+                        const newAudioSrc = data.audio_path + '?t=' + new Date().getTime(); // 防缓存
+                        audioEl.src = newAudioSrc;
+                        audioEl.load();
+                        audioEl.play().catch(() => { /* 有些浏览器需要用户手势，忽略即可 */ });
+                    }
+
                     showMessage('对话完成！');
                 } else {
                     showMessage('对话处理失败: ' + (data.message || '未知错误'));
