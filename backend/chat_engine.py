@@ -194,11 +194,21 @@ def get_ai_response(
             )
 
         elif api_choice == "zhipu":
-            # 需要：export ZHIPU_API_KEY=...
-            # 可选：export ZHIPU_MODEL=glm-4-plus
+            # 需要：export ZHIPU_API_KEY=d957e120df71402f8e56eb9d521df3b4.9TxLF1EsGHACDl32
+            # 可选：export ZHIPU_MODEL=glm-4-flash-250414
             reply = _zhipu_chat(
                 api_key=os.getenv("ZHIPU_API_KEY", "").strip(),
-                model=os.getenv("ZHIPU_MODEL", "glm-4-plus"),
+                model=os.getenv("ZHIPU_MODEL", "glm-4-flash-250414"),
+                user_text=user_text,
+            )
+        
+        elif api_choice == "deepseek":
+            # export DEEPSEEK_API_KEY=sk-292bd1e00ec841ae98a9e36790014bfe
+            # export DEEPSEEK_MODEL="deepseek-chat"   # 可选
+            reply = _openai_compatible_chat(
+                base_url="https://api.deepseek.com",
+                api_key=os.getenv("DEEPSEEK_API_KEY", "").strip(),
+                model=os.getenv("DEEPSEEK_MODEL", "deepseek-chat"),
                 user_text=user_text,
             )
 
@@ -252,6 +262,8 @@ def _openai_compatible_chat(
     kwargs = {"api_key": api_key}
     if base_url:
         kwargs["base_url"] = base_url
+    if extra_headers:
+        kwargs["default_headers"] = extra_headers
 
     client = OpenAI(**kwargs)
 
@@ -259,11 +271,6 @@ def _openai_compatible_chat(
         {"role": "system", "content": "你是一个简短回答的助手，每次回答不超过30字。"},
         {"role": "user", "content": user_text},
     ]
-
-    # extra_headers 仅部分平台需要；不需要就忽略
-    # openai SDK v1 支持通过 default_headers 传入
-    if extra_headers:
-        client = OpenAI(**kwargs, default_headers=extra_headers)
 
     resp = client.chat.completions.create(
         model=model,
