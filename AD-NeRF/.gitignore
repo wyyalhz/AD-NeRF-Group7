@@ -63,11 +63,21 @@ runs/
 data_util/face_tracking/3DMM/01_MorphableModel.mat
 data_util/face_tracking/3DMM/3DMM_info.npy
 Obama/
-Zhao/
+Obama1/
+Obama2/
+May/
+Macron/
+Jae-in
 com_imgs/
 head_imgs/
 ori_imgs/
 parsing/
+Jae-in.mp4
+Lieu.mp4
+Macron.mp4
+Obama1.mp4
+Obama2.mp4
+May.mp4
 
 logs/
 

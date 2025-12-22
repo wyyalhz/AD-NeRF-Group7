@@ -3,6 +3,12 @@ import random
 from pathlib import Path
 import time
 import requests
+import json
+import threading
+
+import json, os, time, threading, subprocess, shutil
+from flask import Response, stream_with_context, jsonify, request
+from backend.adnerf_job import start_adnerf_job
 
 # 可选：语音转文字（你现在先忽略也行）
 try:
@@ -37,12 +43,16 @@ def tts_via_cloud(text: str, save_wav_path: str) -> str:
 
     return save_wav_path
 
+def _project_root() -> str:
+    # backend/chat_engine.py -> backend -> project root
+    return str(Path(__file__).resolve().parents[1])
+
 
 def chat_response(data: dict):
-    """
-    实时对话系统（当前阶段：生成 AI 回复文本，写到 output.txt）
-    之后你们可以把 output 接到 Genie TTS -> AD-NeRF -> ffmpeg
-    """
+    
+    #实时对话系统
+    #生成 AI 回复文本，写到 output.txt，output 接到 Genie TTS -> AD-NeRF -> ffmpeg
+    
     print("[backend.chat_engine] 收到数据：")
     for k, v in data.items():
         print(f"  {k}: {v}")
@@ -59,21 +69,21 @@ def chat_response(data: dict):
         output_text_path=OUTPUT_TEXT_FILE,
         data=data,
     )
-
-    # 你们目前 app.py 期待返回 video_path（哪怕现在还没生成视频）
-    video_path = os.path.join("static", "videos", "chat_response.mp4")
-    print(f"[backend.chat_engine] 回复文本：{reply}")
-    print(f"[backend.chat_engine] 生成视频路径（占位）：{video_path}")
     
     # 写出 output.txt（保持你们前端逻辑不变）
     Path(OUTPUT_TEXT_FILE).parent.mkdir(parents=True, exist_ok=True)
     Path(OUTPUT_TEXT_FILE).write_text(reply, encoding="utf-8")
     print(f"[backend.chat_engine] 答复已保存到: {OUTPUT_TEXT_FILE}")
+    print(f"[backend.chat_engine] 回复文本：{reply}")
     
     # 立刻做 TTS，输出到 static/audios，返回给前端播放
     ts = int(time.time() * 1000)
+    job_id = str(ts)
+
+    Path("./static/audios").mkdir(parents=True, exist_ok=True)
     wav_filename = f"reply_{ts}.wav"
     wav_disk_path = f"./static/audios/{wav_filename}"
+    wav_disk_path = str(Path(wav_disk_path).resolve())
     audio_url = f"/static/audios/{wav_filename}"
 
     try:
@@ -84,11 +94,29 @@ def chat_response(data: dict):
         audio_url = ""
     
     print("TTS wav saved to:", wav_filename)
-    
+
+    project_root = _project_root()
+    static_videos_dir = os.path.join(project_root, "static", "videos")
+
+    person_id = (data.get("id") or "Obama").strip()
+    try:
+        test_size = int(data.get("test_size") or 300)
+    except Exception:
+        test_size = 300
+
+    job_id = start_adnerf_job(
+        project_root=project_root,
+        static_videos_dir=static_videos_dir,
+        person_id=person_id,
+        in_audio=wav_disk_path,     # 绝对路径
+        test_size=test_size,
+        job_id=job_id,              # 用你现成的 job_id（跟前端轮询一致）
+    )
+
     return {
-        "video_path": "",      # 你们以后再填真实生成的视频
+        "job_id": job_id,
+        "video_path": "",
         "audio_path": audio_url,
-        # "reply_text": reply,   # 可选：以后前端也能显示文字
     }
 
 

@@ -1,8 +1,11 @@
-from flask import Flask, render_template, request, jsonify
+from pathlib import Path
+import time
+from flask import Flask, Response, json, render_template, request, jsonify, stream_with_context
 import os
+from backend.chat_engine import chat_response
+from backend.job_store import job_log_path, read_job
 from backend.video_generator import generate_video
 from backend.model_trainer import train_model
-from backend.chat_engine import chat_response
 
 app = Flask(__name__)
 
@@ -69,6 +72,8 @@ def chat_system():
             "voice_clone": request.form.get('voice_clone'),
             "api_choice": request.form.get('api_choice'),
             "text": text,  # 也直接传给 chat_engine（更稳）
+            "id":request.form.get('id'),
+            "test_size":request.form.get('test_size'),
         }
 
         # video_path = chat_response(data)
@@ -83,7 +88,7 @@ def chat_system():
 
         if video_path:
             video_path = video_path.replace("\\", "/")
-            if not audio_path.startswith("/"):
+            if not video_path.startswith("/"):
                 video_path = "/" + video_path
         
         if audio_path:
@@ -94,6 +99,7 @@ def chat_system():
 
         return jsonify({
             'status': 'success',
+            'job_id': result.get("job_id", ""),
             'video_path': video_path,
             'audio_path': audio_path,
         })
@@ -117,6 +123,51 @@ def save_audio():
     
     return jsonify({'status': 'success', 'message': '音频保存成功'})
 
+
+# 新增：前端轮询这个接口来拿“视频是否完成”
+@app.route('/chat_status/<job_id>', methods=['GET'])
+def chat_status(job_id):
+    job_file = Path("./static/text/jobs") / f"{job_id}.json"
+    if job_file.exists():
+        return jsonify(json.loads(job_file.read_text(encoding="utf-8")))
+    return jsonify({"ready": False})
+
+@app.route("/job/<job_id>/events")
+def job_events(job_id: str):
+    lp = job_log_path(job_id)
+    if not lp.exists():
+        return "job not found", 404
+
+    @stream_with_context
+    def gen():
+        with lp.open("r", encoding="utf-8") as f:
+            last_ping = time.time()
+            while True:
+                line = f.readline()
+                if line:
+                    yield f"data: {line.rstrip()}\n\n"
+                    continue
+
+                job = read_job(job_id)
+                if job.get("ready"):
+                    if job.get("error"):
+                        yield "event: error\n"
+                        yield f"data: {job}\n\n"
+                    else:
+                        yield "event: done\n"
+                        yield f"data: {job}\n\n"
+                    break
+
+                if time.time() - last_ping > 10:
+                    yield ": ping\n\n"
+                    last_ping = time.time()
+
+                time.sleep(0.3)
+
+    resp = Response(gen(), mimetype="text/event-stream")
+    resp.headers["Cache-Control"] = "no-cache"
+    resp.headers["X-Accel-Buffering"] = "no"
+    return resp
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=6006, debug=True)

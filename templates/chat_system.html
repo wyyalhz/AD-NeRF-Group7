@@ -288,9 +288,29 @@
                     <div class="form-group">
                         <label class="form-label">模型名称</label>
                         <select name="model_name" class="form-input">
-                            <option value="model1">Model 1</option>
-                            <option value="model2">Model 2</option>
+                            <option value="adnerf">AD-NeRF</option>
                             <option value="SyncTalk">SyncTalk</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">使用人物ID（默认Obama</label>
+                        <select name="id" class="form-input">
+                            <option value="Obama">Obama</option>
+                            <option value="Obama1">Obama1</option>
+                            <option value="Obama2">Obama2</option>
+                            <option value="Lieu">Lieu</option>
+                            <option value="Macron">Macron</option>
+                            <option value="May">May</option>
+                            <option value="Jae-in">Jae-in</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">生成视频帧数（默认300）</label>
+                        <select name="test_size" class="form-input">
+                            <option value="300">300</option>
+                            <option value="500">500</option>
                         </select>
                     </div>
 
@@ -302,8 +322,7 @@
                     <div class="form-group">
                         <label class="form-label">语音克隆模型名称</label>
                         <select name="voice_clone" class="form-input">
-                            <option value="cloneA">Voice Clone A</option>
-                            <option value="cloneB">Voice Clone B</option>
+                            <option value="genie">Genie-TTS</option>
                         </select>
                     </div>
 
@@ -327,6 +346,23 @@
                     <button type="submit" class="btn-submit">
                         <i class="fas fa-comments"></i> 开始对话
                     </button>
+
+                    <pre id="jobLog"
+                        style="
+                        height:220px;
+                        max-width: 900px;     /* 你可以改成 700/800/1000 */
+                        width: 100%;
+                        overflow:auto;
+                        background:#111;
+                        color:#ddd;
+                        padding:10px;
+                        border-radius:8px;
+
+                        white-space: pre-wrap;       /* 关键：允许换行 */
+                        word-break: break-word;      /* 关键：超长单词/路径也能断开 */
+                        overflow-wrap: anywhere;     /* 更激进：任何位置都能断开 */
+                    "></pre>
+
                     <!-- 返回首页按钮 -->
                     <button type="button" class="btn-home" onclick="window.location.href='/'">
                         <i class="fas fa-home"></i> 返回首页
@@ -468,19 +504,22 @@
         
         // 表单验证
         function validateChatForm(formData) {
-            const modelParam = formData.get('model_param');
-            
-            if (!modelParam || modelParam.trim() === '') {
-                showMessage('请输入模型目录路径');
+            const modelName = (formData.get('model_name') || '').trim();
+
+            // 只有 SyncTalk 才强制要 model_param
+            if (modelName === 'SyncTalk') {
+                const modelParam = (formData.get('model_param') || '').trim();
+                if (!modelParam) {
+                showMessage('SyncTalk 需要填写模型目录路径');
                 return false;
+                }
             }
-            
+
             const text = (formData.get('text') || '').trim();
             if (!text) {
                 showMessage('请输入聊天文本（或先录音）');
                 return false;
             }
-
             return true;
         }
         
@@ -500,11 +539,15 @@
                 method: 'POST',
                 body: formData
             })
-            .then(res => {
+            .then(async (res) => {
+                let data = {};
+                try { data = await res.json(); } catch (e) { /* ignore */ }
+
                 if (!res.ok) {
-                    throw new Error(`HTTP错误! 状态: ${res.status}`);
+                    const msg = data.message || `HTTP错误! 状态: ${res.status}`;
+                    throw new Error(msg);
                 }
-                return res.json();
+                return data;
             })
             .then(data => {
                 hideLoading();
@@ -526,6 +569,41 @@
                     }
 
                     showMessage('对话完成！');
+                    showMessage('音频已生成，视频生成中…');
+                    startLogStream(data.job_id); 
+                    pollVideo(data.job_id);
+
+                    function pollVideo(jobId) {
+                        if (!jobId) return;
+
+                        const videoEl = document.getElementById('chatVideo');
+                        const timer = setInterval(() => {
+                            fetch(`/chat_status/${jobId}`)
+                            .then(r => r.json())
+                            .then(s => {
+                                if (!s) return;
+
+                                if (s.ready && s.error) {
+                                    clearInterval(timer);
+                                    showMessage('视频生成失败：' + s.error);
+                                    return;
+                                }
+
+                                if (s.ready && s.video_path) {
+                                    clearInterval(timer);
+                                    // s.video_path 形如 static/videos/xxx.mp4
+                                    const url = '/' + String(s.video_path).replace(/^\/+/, '') + '?t=' + Date.now();
+                                    videoEl.src = url;
+                                    videoEl.load();
+                                    // 不强制 autoplay，避免浏览器限制；你想播就取消注释
+                                    // videoEl.play().catch(()=>{});
+                                    showMessage('视频已生成！');
+                                }
+                            })
+                            .catch(() => {});
+                        }, 3000);
+                    }
+
                 } else {
                     showMessage('对话处理失败: ' + (data.message || '未知错误'));
                 }
@@ -536,6 +614,55 @@
                 showMessage('请求失败: ' + err.message);
             });
         });
+
+        let logES = null;
+
+        function appendLog(line) {
+        const box = document.getElementById('jobLog');
+        if (!box) return;
+        box.textContent += line + "\n";
+        box.scrollTop = box.scrollHeight;
+        }
+
+        function startLogStream(jobId) {
+        if (!jobId) return;
+
+        if (logES) { try { logES.close(); } catch(e){} logES = null; }
+
+        const box = document.getElementById('jobLog');
+        if (box) box.textContent = "";
+
+        logES = new EventSource(`/job/${jobId}/events`);
+
+        logES.onmessage = (e) => {
+            // 清理掉 \r（终端进度条常用的回车覆盖）
+            const cleaned = String(e.data).replace(/\r/g, '');
+            appendLog(cleaned);
+        };
+
+        logES.addEventListener("done", (e) => {
+            appendLog("[frontend] done");
+            try { logES.close(); } catch(e) {}
+            logES = null;
+
+            // 可选：直接解析 done 的 job json 来更新视频（你也可以继续用 pollVideo）
+            try {
+            const job = JSON.parse(e.data);
+            if (job.video_path) {
+                const videoEl = document.getElementById('chatVideo');
+                const url = '/' + String(job.video_path).replace(/^\/+/, '') + '?t=' + Date.now();
+                videoEl.src = url;
+                videoEl.load();
+                showMessage('视频已生成！（来自 SSE done）');
+            }
+            } catch (_) {}
+        });
+
+        logES.addEventListener("error", (e) => {
+            // EventSource 断线会自动重连，这里别当成致命错误
+            appendLog("[frontend] SSE reconnecting...");
+        });
+        }
     </script>
 </body>
 </html>

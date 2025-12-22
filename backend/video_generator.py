@@ -1,6 +1,8 @@
 import os
 import subprocess
 import shutil
+import threading
+import time
 
 
 def _safe_int(value, default=300):
@@ -104,61 +106,154 @@ def generate_video(data):
     # ============================
     # AD-NeRF 分支（支持可变 ID）
     # ============================
-    elif data.get("model_name") == "AD-NeRF":
-        try:
-            person_id = (data.get("id") or "Obama").strip()
-            in_audio = (data.get("ref_audio") or "").strip()
-            if not in_audio:
-                print("[backend.video_generator] [AD-NeRF] ref_audio 为空")
-                return os.path.join("static", "videos", "out.mp4")
+    # elif data.get("model_name") == "AD-NeRF":
+    #     try:
+    #         person_id = (data.get("id") or "Obama").strip()
+    #         in_audio = (data.get("ref_audio") or "").strip()
+    #         if not in_audio:
+    #             print("[backend.video_generator] [AD-NeRF] ref_audio 为空")
+    #             return os.path.join("static", "videos", "out.mp4")
 
-            test_size = _safe_int(data.get("test_size", 300), default=300)
+    #         test_size = _safe_int(data.get("test_size", 300), default=300)
 
-            # 运行推理脚本（传 --id）
-            run_adnerf = os.path.join(project_root, "AD-NeRF", "run_adnerf.sh")
-            cmd = [
-                run_adnerf, "infer",
-                "--id", person_id,
-                "--aud_file", in_audio,
-                "--test_size", str(test_size),
-            ]
+    #         # 运行推理脚本（传 --id）
+    #         run_adnerf = os.path.join(project_root, "AD-NeRF", "run_adnerf.sh")
+    #         cmd = [
+    #             run_adnerf, "infer",
+    #             "--id", person_id,
+    #             "--aud_file", in_audio,
+    #             "--test_size", str(test_size),
+    #         ]
 
-            print(f"[backend.video_generator] [AD-NeRF] 执行命令: {' '.join(cmd)}")
+    #         print(f"[backend.video_generator] [AD-NeRF] 执行命令: {' '.join(cmd)}")
 
-            result = subprocess.run(
-                cmd,
-                capture_output=True,
-                text=True,
-                cwd=os.path.join(project_root, "AD-NeRF"),  # 确保脚本在 AD-NeRF 目录里跑
-            )
+    #         result = subprocess.run(
+    #             cmd,
+    #             capture_output=True,
+    #             text=True,
+    #             cwd=os.path.join(project_root, "AD-NeRF"),  # 确保脚本在 AD-NeRF 目录里跑
+    #         )
 
-            print("[backend.video_generator] [AD-NeRF] 标准输出:", result.stdout)
-            if result.stderr:
-                print("[backend.video_generator] [AD-NeRF] 标准错误:", result.stderr)
+    #         print("[backend.video_generator] [AD-NeRF] 标准输出:", result.stdout)
+    #         if result.stderr:
+    #             print("[backend.video_generator] [AD-NeRF] 标准错误:", result.stderr)
 
-            # 按你的 run_infer.sh 规则：输出 = dataset/<ID>/render_out/<name>.mp4
-            name = _stem_from_audio_path(in_audio)
-            render_dir = os.path.join(project_root, "AD-NeRF", "dataset", person_id, "render_out")
-            source_path = os.path.join(render_dir, f"{name}.mp4")
+    #         # 按你的 run_infer.sh 规则：输出 = dataset/<ID>/render_out/<name>.mp4
+    #         name = _stem_from_audio_path(in_audio)
+    #         render_dir = os.path.join(project_root, "AD-NeRF", "dataset", person_id, "render_out")
+    #         source_path = os.path.join(render_dir, f"{name}.mp4")
 
-            if not os.path.exists(source_path):
-                print(f"[backend.video_generator] [AD-NeRF] 未找到输出视频: {source_path}")
-                return os.path.join("static", "videos", "out.mp4")
+    #         if not os.path.exists(source_path):
+    #             print(f"[backend.video_generator] [AD-NeRF] 未找到输出视频: {source_path}")
+    #             return os.path.join("static", "videos", "out.mp4")
 
-            # 复制到 static/videos 供前端访问
-            destination_name = f"adnerf_{person_id}_{name}.mp4"
-            destination_path = os.path.join(static_videos_dir, destination_name)
-            shutil.copy(source_path, destination_path)
+    #         # 复制到 static/videos 供前端访问
+    #         destination_name = f"adnerf_{person_id}_{name}.mp4"
+    #         destination_path = os.path.join(static_videos_dir, destination_name)
+    #         shutil.copy(source_path, destination_path)
 
-            rel_path = os.path.join("static", "videos", destination_name)
-            print(f"[backend.video_generator] [AD-NeRF] 视频生成完成，路径：{rel_path}")
-            return rel_path
+    #         rel_path = os.path.join("static", "videos", destination_name)
+    #         print(f"[backend.video_generator] [AD-NeRF] 视频生成完成，路径：{rel_path}")
+    #         return rel_path
 
-        except Exception as e:
-            print(f"[backend.video_generator] [AD-NeRF] 推理失败: {e}")
-            return os.path.join("static", "videos", "out.mp4")
+    #     except Exception as e:
+    #         print(f"[backend.video_generator] [AD-NeRF] 推理失败: {e}")
+    #         return os.path.join("static", "videos", "out.mp4")
+    
 
     # ============================
     # 兜底
     # ============================
     return os.path.join("static", "videos", "out.mp4")
+
+def start_adnerf_job(project_root: str, static_videos_dir: str,
+                     person_id: str, in_audio: str, test_size: int) -> str:
+    """
+    启动后台任务，返回 job_id
+    job.json: {ready, error, video_path, started_at, finished_at}
+    job.log : 实时追加子进程输出
+    """
+    job_id = str(int(time.time() * 1000))  # 你也可以用 uuid.uuid4().hex
+
+    # 初始化 job 状态
+    _write_job(job_id, {
+        "ready": False,
+        "error": "",
+        "video_path": "",
+        "started_at": time.time(),
+        "finished_at": 0,
+    })
+    # 清空/创建日志
+    _job_log_path(job_id).write_text("", encoding="utf-8")
+
+    def worker():
+        try:
+            run_adnerf = os.path.join(project_root, "AD-NeRF", "run_adnerf.sh")
+
+            # 保险：显式 bash 调脚本（避免 chmod / shebang 问题）
+            cmd = [
+                "bash", run_adnerf, "infer",
+                "--id", person_id,
+                "--aud_file", in_audio,
+                "--test_size", str(test_size),
+            ]
+
+            _append_job_log(job_id, f"[backend] CMD: {' '.join(cmd)}")
+
+            env = os.environ.copy()
+            env["PYTHONUNBUFFERED"] = "1"  # 让 python 日志更实时
+
+            p = subprocess.Popen(
+                cmd,
+                cwd=os.path.join(project_root, "AD-NeRF"),
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                bufsize=1,
+                env=env,
+            )
+
+            assert p.stdout is not None
+            for line in p.stdout:
+                _append_job_log(job_id, line.rstrip("\n"))
+
+            rc = p.wait()
+            _append_job_log(job_id, f"[backend] process exited with code {rc}")
+            if rc != 0:
+                raise RuntimeError(f"AD-NeRF infer failed, exit={rc}")
+
+            # 按你现有规则找输出：dataset/<ID>/render_out/<name>.mp4
+            name = _stem_from_audio_path(in_audio)  # 你已有这个函数
+            render_dir = os.path.join(project_root, "AD-NeRF", "dataset", person_id, "render_out")
+            source_path = os.path.join(render_dir, f"{name}.mp4")
+            if not os.path.exists(source_path):
+                raise FileNotFoundError(f"未找到输出视频: {source_path}")
+
+            os.makedirs(static_videos_dir, exist_ok=True)
+            destination_name = f"adnerf_{person_id}_{name}.mp4"
+            destination_path = os.path.join(static_videos_dir, destination_name)
+            shutil.copy(source_path, destination_path)
+
+            rel_path = os.path.join("static", "videos", destination_name).replace("\\", "/")
+            _append_job_log(job_id, f"[backend] DONE video: /{rel_path}")
+
+            _write_job(job_id, {
+                "ready": True,
+                "error": "",
+                "video_path": rel_path,  # 你前端 pollVideo 会自己加 '/'
+                "started_at": _read_job(job_id).get("started_at", time.time()),
+                "finished_at": time.time(),
+            })
+
+        except Exception as e:
+            _append_job_log(job_id, f"[backend] ERROR: {e}")
+            _write_job(job_id, {
+                "ready": True,
+                "error": str(e),
+                "video_path": "",
+                "started_at": _read_job(job_id).get("started_at", time.time()),
+                "finished_at": time.time(),
+            })
+
+    threading.Thread(target=worker, daemon=True).start()
+    return job_id

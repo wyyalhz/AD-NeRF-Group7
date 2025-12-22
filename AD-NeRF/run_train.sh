@@ -115,7 +115,11 @@ echo "========== 训练 HeadNeRF =========="
 conda run -n adnerf python NeRFs/HeadNeRF/run_nerf.py \
     --config "$HEAD_CFG" \
     2>&1 | tee "${LOG_DIR_HEAD}/train_head.log"
-echo
+
+# #测试脚本时显示进度条
+# script -q -c "conda run -n adnerf python NeRFs/HeadNeRF/run_nerf.py --config \"$HEAD_CFG\"" /dev/null \
+#   | tee "${LOG_DIR_HEAD}/train_head.log"
+# echo
 
 ########################################
 # 7. 同步 HeadNeRF checkpoint → TorsoNeRF
