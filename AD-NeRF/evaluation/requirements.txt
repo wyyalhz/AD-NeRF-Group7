@@ -1,0 +1,23 @@
+# Requirements for AD-NeRF Evaluation Module
+# Install with: pip install -r evaluation/requirements.txt
+
+# Core dependencies (should already be in AD-NeRF environment)
+numpy>=1.19.0
+opencv-python>=4.5.0
+matplotlib>=3.3.0
+torch>=1.8.0
+torchvision>=0.9.0
+
+# Image quality metrics
+scikit-image>=0.18.0
+
+# FID computation (optional but recommended)
+pytorch-fid>=0.3.0
+
+# Landmark detection for NIOE (optional)
+face-alignment>=1.3.0
+
+# Additional utilities
+tqdm>=4.60.0
+Pillow>=8.0.0
+scipy>=1.5.0
