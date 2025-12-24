@@ -1,0 +1,23 @@
+[backend] CMD: bash /home/wyyalhz/projects/AD-NeRF-Group7/AD-NeRF/run_adnerf.sh infer --id Obama --aud_file /home/wyyalhz/projects/AD-NeRF-Group7/static/audios/reply_1766540838154.wav --test_size 300
+[run_adnerf] MODE       = infer
+[run_adnerf] ID         = Obama
+[run_adnerf] AUD_FILE   = /home/wyyalhz/projects/AD-NeRF-Group7/static/audios/reply_1766540838154.wav
+[run_adnerf] TEST_SIZE  = 300
+[run_adnerf] PREPROCESS = off
+
+[run_adnerf] 调用 run_infer.sh 进行推理...
+[run_adnerf] -> id       = Obama
+[run_adnerf] -> aud_file  = /home/wyyalhz/projects/AD-NeRF-Group7/static/audios/reply_1766540838154.wav
+[run_adnerf] -> test_size = 300
+
+[run_infer.sh] 使用 ID           : Obama
+[run_infer.sh] Torso 配置文件     : dataset/Obama/TorsoNeRFTest_config.txt
+[run_infer.sh] 输入文件          : /home/wyyalhz/projects/AD-NeRF-Group7/static/audios/reply_1766540838154.wav (type=wav)
+[run_infer.sh] 目标 wav           : dataset/Obama/reply_1766540838154.wav
+[run_infer.sh] 目标 npy           : dataset/Obama/reply_1766540838154.npy
+[run_infer.sh] test_size          : 300
+[run_infer.sh] 输出视频           : dataset/Obama/render_out/reply_1766540838154.mp4
+
+!!! 输入 wav 不存在: /home/wyyalhz/projects/AD-NeRF-Group7/static/audios/reply_1766540838154.wav
+[backend] exit=1
+[backend] ERROR: AD-NeRF infer failed, exit=1
