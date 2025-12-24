@@ -5,13 +5,9 @@ Merge silent NeRF video with audio using ffmpeg, with configurable codecs.
 
 Example:
     # 最常用、兼容性最好的 H.264 + AAC：
-    python add_audio.py \
-        --video result-Zhao.avi \
-        --audio aud.wav \
-        --output result-Zhao_with_audio.mp4 \
-        --vcodec libx264
-        --crf 18
-
+    python add_audio.py --video result-Obama.avi --audio aud-Zhao.wav --output TestResult-Obama_with_audio.mp4 --vcodec libx264 --crf 18
+    python add_audio.py --video result-Obama1.avi --audio reply_1766419453546.wav --output ChatResult-Obama1_with_audio.mp4 --vcodec libx264 --crf 18
+    
     # 如果你真的想保持原视频编码（不改码）：
     # python add_audio.py --vcodec copy
 """

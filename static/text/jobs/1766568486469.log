@@ -1,0 +1,83 @@
+[backend] CMD: bash /root/projects/AD-NeRF-Group7/AD-NeRF/run_adnerf.sh infer --id Obama --aud_file /root/projects/AD-NeRF-Group7/static/audios/reply_1766568486469.wav --test_size 300
+[run_adnerf] MODE       = infer
+[run_adnerf] ID         = Obama
+[run_adnerf] AUD_FILE   = /root/projects/AD-NeRF-Group7/static/audios/reply_1766568486469.wav
+[run_adnerf] TEST_SIZE  = 300
+[run_adnerf] PREPROCESS = off
+
+[run_adnerf] 调用 run_infer.sh 进行推理...
+[run_adnerf] -> id       = Obama
+[run_adnerf] -> aud_file  = /root/projects/AD-NeRF-Group7/static/audios/reply_1766568486469.wav
+[run_adnerf] -> test_size = 300
+
+[run_infer.sh] 使用 ID           : Obama
+[run_infer.sh] Torso 配置文件     : dataset/Obama/TorsoNeRFTest_config.txt
+[run_infer.sh] 输入文件          : /root/projects/AD-NeRF-Group7/static/audios/reply_1766568486469.wav (type=wav)
+[run_infer.sh] 目标 wav           : dataset/Obama/reply_1766568486469.wav
+[run_infer.sh] 目标 npy           : dataset/Obama/reply_1766568486469.npy
+[run_infer.sh] test_size          : 300
+[run_infer.sh] 输出视频           : dataset/Obama/render_out/reply_1766568486469.mp4
+
+[run_infer.sh] 使用 ffmpeg 将输入 wav 转为 16k: dataset/Obama/reply_1766568486469.wav
+ffmpeg version 4.4.2-0ubuntu0.22.04.1 Copyright (c) 2000-2021 the FFmpeg developers
+  built with gcc 11 (Ubuntu 11.2.0-19ubuntu1)
+  configuration: --prefix=/usr --extra-version=0ubuntu0.22.04.1 --toolchain=hardened --libdir=/usr/lib/x86_64-linux-gnu --incdir=/usr/include/x86_64-linux-gnu --arch=amd64 --enable-gpl --disable-stripping --enable-gnutls --enable-ladspa --enable-libaom --enable-libass --enable-libbluray --enable-libbs2b --enable-libcaca --enable-libcdio --enable-libcodec2 --enable-libdav1d --enable-libflite --enable-libfontconfig --enable-libfreetype --enable-libfribidi --enable-libgme --enable-libgsm --enable-libjack --enable-libmp3lame --enable-libmysofa --enable-libopenjpeg --enable-libopenmpt --enable-libopus --enable-libpulse --enable-librabbitmq --enable-librubberband --enable-libshine --enable-libsnappy --enable-libsoxr --enable-libspeex --enable-libsrt --enable-libssh --enable-libtheora --enable-libtwolame --enable-libvidstab --enable-libvorbis --enable-libvpx --enable-libwebp --enable-libx265 --enable-libxml2 --enable-libxvid --enable-libzimg --enable-libzmq --enable-libzvbi --enable-lv2 --enable-omx --enable-openal --enable-opencl --enable-opengl --enable-sdl2 --enable-pocketsphinx --enable-librsvg --enable-libmfx --enable-libdc1394 --enable-libdrm --enable-libiec61883 --enable-chromaprint --enable-frei0r --enable-libx264 --enable-shared
+  libavutil      56. 70.100 / 56. 70.100
+  libavcodec     58.134.100 / 58.134.100
+  libavformat    58. 76.100 / 58. 76.100
+  libavdevice    58. 13.100 / 58. 13.100
+  libavfilter     7.110.100 /  7.110.100
+  libswscale      5.  9.100 /  5.  9.100
+  libswresample   3.  9.100 /  3.  9.100
+  libpostproc    55.  9.100 / 55.  9.100
+Guessed Channel Layout for Input Stream #0.0 : mono
+Input #0, wav, from '/root/projects/AD-NeRF-Group7/static/audios/reply_1766568486469.wav':
+  Duration: 00:00:08.48, bitrate: 512 kb/s
+  Stream #0:0: Audio: pcm_s16le ([1][0][0][0] / 0x0001), 32000 Hz, mono, s16, 512 kb/s
+Stream mapping:
+  Stream #0:0 -> #0:0 (pcm_s16le (native) -> pcm_s16le (native))
+Press [q] to stop, [?] for help
+Output #0, wav, to 'dataset/Obama/reply_1766568486469.wav.tmp16k.wav':
+  Metadata:
+    ISFT            : Lavf58.76.100
+  Stream #0:0: Audio: pcm_s16le ([1][0][0][0] / 0x0001), 16000 Hz, mono, s16, 256 kb/s
+    Metadata:
+      encoder         : Lavc58.134.100 pcm_s16le
+size=       2kB time=00:00:00.00 bitrate=N/A speed=N/A    
+size=     265kB time=00:00:08.47 bitrate= 256.1kbits/s speed=2.29e+03x    
+video:0kB audio:265kB subtitle:0kB other streams:0kB global headers:0kB muxing overhead: 0.028744%
+[run_infer.sh] 未找到 npy，开始从 wav 提取 DeepSpeech 特征生成 npy...
+dataset/Obama/_ds_tmp_reply_1766568486469/aud.wav
+dataset/Obama/_ds_tmp_reply_1766568486469/aud.npy
+(212, 16, 29)
+
+2025-12-24 17:28:16.886361: I tensorflow/stream_executor/platform/default/dso_loader.cc:44] Successfully opened dynamic library libcuda.so.1
+2025-12-24 17:28:16.904267: I tensorflow/stream_executor/cuda/cuda_gpu_executor.cc:983] successful NUMA node read from SysFS had negative value (-1), but there must be at least one NUMA node, so returning NUMA node zero
+2025-12-24 17:28:16.906221: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1618] Found device 0 with properties: 
+name: Tesla T4 major: 7 minor: 5 memoryClockRate(GHz): 1.59
+pciBusID: 0000:00:0d.0
+2025-12-24 17:28:16.906346: W tensorflow/stream_executor/platform/default/dso_loader.cc:55] Could not load dynamic library 'libcudart.so.10.0'; dlerror: libcudart.so.10.0: cannot open shared object file: No such file or directory
+2025-12-24 17:28:16.906404: W tensorflow/stream_executor/platform/default/dso_loader.cc:55] Could not load dynamic library 'libcublas.so.10.0'; dlerror: libcublas.so.10.0: cannot open shared object file: No such file or directory
+2025-12-24 17:28:16.906444: W tensorflow/stream_executor/platform/default/dso_loader.cc:55] Could not load dynamic library 'libcufft.so.10.0'; dlerror: libcufft.so.10.0: cannot open shared object file: No such file or directory
+2025-12-24 17:28:16.906480: W tensorflow/stream_executor/platform/default/dso_loader.cc:55] Could not load dynamic library 'libcurand.so.10.0'; dlerror: libcurand.so.10.0: cannot open shared object file: No such file or directory
+2025-12-24 17:28:16.906515: W tensorflow/stream_executor/platform/default/dso_loader.cc:55] Could not load dynamic library 'libcusolver.so.10.0'; dlerror: libcusolver.so.10.0: cannot open shared object file: No such file or directory
+2025-12-24 17:28:16.906550: W tensorflow/stream_executor/platform/default/dso_loader.cc:55] Could not load dynamic library 'libcusparse.so.10.0'; dlerror: libcusparse.so.10.0: cannot open shared object file: No such file or directory
+2025-12-24 17:28:16.906589: W tensorflow/stream_executor/platform/default/dso_loader.cc:55] Could not load dynamic library 'libcudnn.so.7'; dlerror: libcudnn.so.7: cannot open shared object file: No such file or directory
+2025-12-24 17:28:16.906600: W tensorflow/core/common_runtime/gpu/gpu_device.cc:1641] Cannot dlopen some GPU libraries. Please make sure the missing libraries mentioned above are installed properly if you would like to use GPU. Follow the guide at https://www.tensorflow.org/install/gpu for how to download and setup the required libraries for your platform.
+Skipping registering GPU devices...
+2025-12-24 17:28:16.906893: I tensorflow/core/platform/cpu_feature_guard.cc:142] Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2 AVX512F FMA
+2025-12-24 17:28:16.912196: I tensorflow/core/platform/profile_utils/cpu_utils.cc:94] CPU Frequency: 2600000000 Hz
+2025-12-24 17:28:16.912588: I tensorflow/compiler/xla/service/service.cc:168] XLA service 0x56419a997a40 initialized for platform Host (this does not guarantee that XLA will be used). Devices:
+2025-12-24 17:28:16.912609: I tensorflow/compiler/xla/service/service.cc:176]   StreamExecutor device (0): Host, Default Version
+2025-12-24 17:28:17.106783: I tensorflow/stream_executor/cuda/cuda_gpu_executor.cc:983] successful NUMA node read from SysFS had negative value (-1), but there must be at least one NUMA node, so returning NUMA node zero
+2025-12-24 17:28:17.108631: I tensorflow/compiler/xla/service/service.cc:168] XLA service 0x56419aa92280 initialized for platform CUDA (this does not guarantee that XLA will be used). Devices:
+2025-12-24 17:28:17.108679: I tensorflow/compiler/xla/service/service.cc:176]   StreamExecutor device (0): Tesla T4, Compute Capability 7.5
+2025-12-24 17:28:17.108813: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1159] Device interconnect StreamExecutor with strength 1 edge matrix:
+2025-12-24 17:28:17.108835: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1165]      
+2025-12-24 17:28:17.164946: W tensorflow/core/framework/cpu_allocator_impl.cc:81] Allocation of 201326592 exceeds 10% of system memory.
+2025-12-24 17:28:17.342862: W tensorflow/core/framework/cpu_allocator_impl.cc:81] Allocation of 201326592 exceeds 10% of system memory.
+2025-12-24 17:28:17.588627: W tensorflow/core/framework/cpu_allocator_impl.cc:81] Allocation of 201326592 exceeds 10% of system memory.
+2025-12-24 17:28:17.723950: W tensorflow/core/framework/cpu_allocator_impl.cc:81] Allocation of 201326592 exceeds 10% of system memory.
+2025-12-24 17:28:17.859399: W tensorflow/core/framework/cpu_allocator_impl.cc:81] Allocation of 201326592 exceeds 10% of system memory.
+
+[run_infer.sh] 已生成 npy：dataset/Obama/reply_1766568486469.npy

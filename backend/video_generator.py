@@ -28,232 +28,231 @@ def _tfg_root() -> str:
     return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
-def generate_video(data):
-    """
-    视频生成逻辑：接收来自前端的参数，并返回一个视频路径（相对 static/ 的路径）。
-    """
-    print("[backend.video_generator] 收到数据：")
-    for k, v in data.items():
-        print(f"  {k}: {v}")
+# def generate_video(data):
+#     """
+#     视频生成逻辑：接收来自前端的参数，并返回一个视频路径（相对 static/ 的路径）。
+#     """
+#     print("[backend.video_generator] 收到数据：")
+#     for k, v in data.items():
+#         print(f"  {k}: {v}")
 
-    project_root = _tfg_root()  # /root/TFG_ui
+#     project_root = _tfg_root()  # /root/TFG_ui
+#     static_videos_dir = os.path.join(project_root, "static", "videos")
+#     os.makedirs(static_videos_dir, exist_ok=True)
+
+#     # ============================
+#     # SyncTalk 分支（基本保持原逻辑，改成绝对路径更稳）
+#     # ============================
+#     if data.get("model_name") == "SyncTalk":
+#         try:
+#             cmd = [
+#                 os.path.join(project_root, "SyncTalk", "run_synctalk.sh"), "infer",
+#                 "--model_dir", data.get("model_param", ""),
+#                 "--audio_path", data.get("ref_audio", ""),
+#                 "--gpu", data.get("gpu_choice", "GPU0"),
+#             ]
+
+#             print(f"[backend.video_generator] 执行命令: {' '.join(cmd)}")
+
+#             result = subprocess.run(
+#                 cmd,
+#                 capture_output=True,
+#                 text=True,
+#                 cwd=project_root,   # 确保工作目录在 TFG_ui
+#             )
+
+#             print("命令标准输出:", result.stdout)
+#             if result.stderr:
+#                 print("命令标准错误:", result.stderr)
+
+#             model_dir_name = os.path.basename(data.get("model_param", ""))
+#             source_path = os.path.join(
+#                 project_root, "SyncTalk", "model", model_dir_name, "results", "test_audio.mp4"
+#             )
+
+#             audio_name = os.path.splitext(os.path.basename(data.get("ref_audio", "")))[0]
+#             video_filename = f"{model_dir_name}_{audio_name}.mp4"
+#             destination_path = os.path.join(static_videos_dir, video_filename)
+
+#             if os.path.exists(source_path):
+#                 shutil.copy(source_path, destination_path)
+#                 rel_path = os.path.join("static", "videos", video_filename)
+#                 print(f"[backend.video_generator] 视频生成完成，路径：{rel_path}")
+#                 return rel_path
+
+#             print(f"[backend.video_generator] 视频文件不存在: {source_path}")
+
+#             # 兜底：找 results 下最新 mp4
+#             results_dir = os.path.join(project_root, "SyncTalk", "model", model_dir_name, "results")
+#             if os.path.exists(results_dir):
+#                 mp4_files = [f for f in os.listdir(results_dir) if f.endswith(".mp4")]
+#                 if mp4_files:
+#                     latest_file = max(
+#                         mp4_files,
+#                         key=lambda f: os.path.getctime(os.path.join(results_dir, f)),
+#                     )
+#                     source_path = os.path.join(results_dir, latest_file)
+#                     shutil.copy(source_path, destination_path)
+#                     rel_path = os.path.join("static", "videos", video_filename)
+#                     print(f"[backend.video_generator] 找到最新视频文件: {rel_path}")
+#                     return rel_path
+
+#             return os.path.join("static", "videos", "out.mp4")
+
+#         except Exception as e:
+#             print(f"[backend.video_generator] [SyncTalk] 错误: {e}")
+#             return os.path.join("static", "videos", "out.mp4")
+
+#     # ============================
+#     # AD-NeRF 分支（支持可变 ID）
+#     # ============================
+#     elif data.get("model_name") == "AD-NeRF":
+#         try:
+#             person_id = (data.get("id") or "Obama").strip()
+#             in_audio = (data.get("ref_audio") or "").strip()
+#             if not in_audio:
+#                 print("[backend.video_generator] [AD-NeRF] ref_audio 为空")
+#                 return os.path.join("static", "videos", "out.mp4")
+
+#             test_size = _safe_int(data.get("test_size", 300), default=300)
+
+#             # 运行推理脚本（传 --id）
+#             run_adnerf = os.path.join(project_root, "AD-NeRF", "run_adnerf.sh")
+#             cmd = [
+#                 run_adnerf, "infer",
+#                 "--id", person_id,
+#                 "--aud_file", in_audio,
+#                 "--test_size", str(test_size),
+#             ]
+
+#             print(f"[backend.video_generator] [AD-NeRF] 执行命令: {' '.join(cmd)}")
+
+#             result = subprocess.run(
+#                 cmd,
+#                 capture_output=True,
+#                 text=True,
+#                 cwd=os.path.join(project_root, "AD-NeRF"),  # 确保脚本在 AD-NeRF 目录里跑
+#             )
+
+#             print("[backend.video_generator] [AD-NeRF] 标准输出:", result.stdout)
+#             if result.stderr:
+#                 print("[backend.video_generator] [AD-NeRF] 标准错误:", result.stderr)
+
+#             # 按你的 run_infer.sh 规则：输出 = dataset/<ID>/render_out/<name>.mp4
+#             name = _stem_from_audio_path(in_audio)
+#             render_dir = os.path.join(project_root, "AD-NeRF", "dataset", person_id, "render_out")
+#             source_path = os.path.join(render_dir, f"{name}.mp4")
+
+#             if not os.path.exists(source_path):
+#                 print(f"[backend.video_generator] [AD-NeRF] 未找到输出视频: {source_path}")
+#                 return os.path.join("static", "videos", "out.mp4")
+
+#             # 复制到 static/videos 供前端访问
+#             destination_name = f"adnerf_{person_id}_{name}.mp4"
+#             destination_path = os.path.join(static_videos_dir, destination_name)
+#             shutil.copy(source_path, destination_path)
+
+#             rel_path = os.path.join("static", "videos", destination_name)
+#             print(f"[backend.video_generator] [AD-NeRF] 视频生成完成，路径：{rel_path}")
+#             return rel_path
+
+#         except Exception as e:
+#             print(f"[backend.video_generator] [AD-NeRF] 推理失败: {e}")
+#             return os.path.join("static", "videos", "out.mp4")
+    
+
+#     # ============================
+#     # 兜底
+#     # ============================
+#     return os.path.join("static", "videos", "out.mp4")
+
+def _normalize_audio_path(project_root: str, in_audio: str) -> str:
+    """
+    允许前端输入：
+      - 绝对路径：/root/TFG_ui/static/audios/input.wav
+      - static/...：相对 TFG_ui 根目录
+      - dataset/...：相对 AD-NeRF 目录
+      - AD-NeRF/...：相对 TFG_ui 根目录
+    """
+    in_audio = (in_audio or "").strip()
+    if not in_audio:
+        return ""
+
+    if os.path.isabs(in_audio):
+        return in_audio
+
+    in_audio = in_audio.replace("\\", "/")
+
+    if in_audio.startswith("dataset/"):
+        return os.path.join(project_root, "AD-NeRF", in_audio)
+    if in_audio.startswith("AD-NeRF/") or in_audio.startswith("static/"):
+        return os.path.join(project_root, in_audio)
+
+    # 其他情况：按 TFG_ui 根目录相对路径处理
+    return os.path.join(project_root, in_audio)
+
+
+def generate_video(data):
+    ...
+    project_root = _tfg_root()
     static_videos_dir = os.path.join(project_root, "static", "videos")
     os.makedirs(static_videos_dir, exist_ok=True)
 
-    # ============================
-    # SyncTalk 分支（基本保持原逻辑，改成绝对路径更稳）
-    # ============================
     if data.get("model_name") == "SyncTalk":
-        try:
-            cmd = [
-                os.path.join(project_root, "SyncTalk", "run_synctalk.sh"), "infer",
-                "--model_dir", data.get("model_param", ""),
-                "--audio_path", data.get("ref_audio", ""),
-                "--gpu", data.get("gpu_choice", "GPU0"),
-            ]
+        ...
+        result = subprocess.run(...)
 
-            print(f"[backend.video_generator] 执行命令: {' '.join(cmd)}")
+        if result.returncode != 0:
+            raise RuntimeError(f"SyncTalk failed, exit={result.returncode}\n{result.stderr}")
 
-            result = subprocess.run(
-                cmd,
-                capture_output=True,
-                text=True,
-                cwd=project_root,   # 确保工作目录在 TFG_ui
-            )
+        ...
+        return rel_path.replace("\\", "/")
 
-            print("命令标准输出:", result.stdout)
-            if result.stderr:
-                print("命令标准错误:", result.stderr)
+    elif data.get("model_name") == "AD-NeRF":
+        person_id = (data.get("id") or "Obama").strip()
+        test_size = _safe_int(data.get("test_size", 300), default=300)
 
-            model_dir_name = os.path.basename(data.get("model_param", ""))
-            source_path = os.path.join(
-                project_root, "SyncTalk", "model", model_dir_name, "results", "test_audio.mp4"
-            )
+        in_audio_raw = (data.get("ref_audio") or "").strip()
+        in_audio = _normalize_audio_path(project_root, in_audio_raw)
+        if not in_audio:
+            raise ValueError("ref_audio 为空")
 
-            audio_name = os.path.splitext(os.path.basename(data.get("ref_audio", "")))[0]
-            video_filename = f"{model_dir_name}_{audio_name}.mp4"
-            destination_path = os.path.join(static_videos_dir, video_filename)
+        run_adnerf = os.path.join(project_root, "AD-NeRF", "run_adnerf.sh")
+        cmd = [
+            "bash", run_adnerf, "infer",
+            "--id", person_id,
+            "--aud_file", in_audio,
+            "--test_size", str(test_size),
+        ]
 
-            if os.path.exists(source_path):
-                shutil.copy(source_path, destination_path)
-                rel_path = os.path.join("static", "videos", video_filename)
-                print(f"[backend.video_generator] 视频生成完成，路径：{rel_path}")
-                return rel_path
+        print(f"[backend.video_generator] [AD-NeRF] 执行命令: {' '.join(cmd)}")
 
-            print(f"[backend.video_generator] 视频文件不存在: {source_path}")
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            cwd=os.path.join(project_root, "AD-NeRF"),
+        )
 
-            # 兜底：找 results 下最新 mp4
-            results_dir = os.path.join(project_root, "SyncTalk", "model", model_dir_name, "results")
-            if os.path.exists(results_dir):
-                mp4_files = [f for f in os.listdir(results_dir) if f.endswith(".mp4")]
-                if mp4_files:
-                    latest_file = max(
-                        mp4_files,
-                        key=lambda f: os.path.getctime(os.path.join(results_dir, f)),
-                    )
-                    source_path = os.path.join(results_dir, latest_file)
-                    shutil.copy(source_path, destination_path)
-                    rel_path = os.path.join("static", "videos", video_filename)
-                    print(f"[backend.video_generator] 找到最新视频文件: {rel_path}")
-                    return rel_path
+        print("[backend.video_generator] [AD-NeRF] stdout:\n", result.stdout)
+        if result.stderr:
+            print("[backend.video_generator] [AD-NeRF] stderr:\n", result.stderr)
 
-            return os.path.join("static", "videos", "out.mp4")
+        if result.returncode != 0:
+            raise RuntimeError(f"AD-NeRF infer failed, exit={result.returncode}\n{result.stderr}")
 
-        except Exception as e:
-            print(f"[backend.video_generator] [SyncTalk] 错误: {e}")
-            return os.path.join("static", "videos", "out.mp4")
+        name = _stem_from_audio_path(in_audio)
+        source_path = os.path.join(project_root, "AD-NeRF", "dataset", person_id, "render_out", f"{name}.mp4")
+        if not os.path.exists(source_path):
+            raise FileNotFoundError(f"未找到输出视频: {source_path}")
 
-    # ============================
-    # AD-NeRF 分支（支持可变 ID）
-    # ============================
-    # elif data.get("model_name") == "AD-NeRF":
-    #     try:
-    #         person_id = (data.get("id") or "Obama").strip()
-    #         in_audio = (data.get("ref_audio") or "").strip()
-    #         if not in_audio:
-    #             print("[backend.video_generator] [AD-NeRF] ref_audio 为空")
-    #             return os.path.join("static", "videos", "out.mp4")
+        destination_name = f"adnerf_{person_id}_{name}.mp4"
+        destination_path = os.path.join(static_videos_dir, destination_name)
+        shutil.copy(source_path, destination_path)
 
-    #         test_size = _safe_int(data.get("test_size", 300), default=300)
+        rel_path = os.path.join("static", "videos", destination_name).replace("\\", "/")
+        print(f"[backend.video_generator] [AD-NeRF] 视频生成完成: {rel_path}")
+        return rel_path
 
-    #         # 运行推理脚本（传 --id）
-    #         run_adnerf = os.path.join(project_root, "AD-NeRF", "run_adnerf.sh")
-    #         cmd = [
-    #             run_adnerf, "infer",
-    #             "--id", person_id,
-    #             "--aud_file", in_audio,
-    #             "--test_size", str(test_size),
-    #         ]
-
-    #         print(f"[backend.video_generator] [AD-NeRF] 执行命令: {' '.join(cmd)}")
-
-    #         result = subprocess.run(
-    #             cmd,
-    #             capture_output=True,
-    #             text=True,
-    #             cwd=os.path.join(project_root, "AD-NeRF"),  # 确保脚本在 AD-NeRF 目录里跑
-    #         )
-
-    #         print("[backend.video_generator] [AD-NeRF] 标准输出:", result.stdout)
-    #         if result.stderr:
-    #             print("[backend.video_generator] [AD-NeRF] 标准错误:", result.stderr)
-
-    #         # 按你的 run_infer.sh 规则：输出 = dataset/<ID>/render_out/<name>.mp4
-    #         name = _stem_from_audio_path(in_audio)
-    #         render_dir = os.path.join(project_root, "AD-NeRF", "dataset", person_id, "render_out")
-    #         source_path = os.path.join(render_dir, f"{name}.mp4")
-
-    #         if not os.path.exists(source_path):
-    #             print(f"[backend.video_generator] [AD-NeRF] 未找到输出视频: {source_path}")
-    #             return os.path.join("static", "videos", "out.mp4")
-
-    #         # 复制到 static/videos 供前端访问
-    #         destination_name = f"adnerf_{person_id}_{name}.mp4"
-    #         destination_path = os.path.join(static_videos_dir, destination_name)
-    #         shutil.copy(source_path, destination_path)
-
-    #         rel_path = os.path.join("static", "videos", destination_name)
-    #         print(f"[backend.video_generator] [AD-NeRF] 视频生成完成，路径：{rel_path}")
-    #         return rel_path
-
-    #     except Exception as e:
-    #         print(f"[backend.video_generator] [AD-NeRF] 推理失败: {e}")
-    #         return os.path.join("static", "videos", "out.mp4")
-    
-
-    # ============================
-    # 兜底
-    # ============================
-    return os.path.join("static", "videos", "out.mp4")
-
-def start_adnerf_job(project_root: str, static_videos_dir: str,
-                     person_id: str, in_audio: str, test_size: int) -> str:
-    """
-    启动后台任务，返回 job_id
-    job.json: {ready, error, video_path, started_at, finished_at}
-    job.log : 实时追加子进程输出
-    """
-    job_id = str(int(time.time() * 1000))  # 你也可以用 uuid.uuid4().hex
-
-    # 初始化 job 状态
-    _write_job(job_id, {
-        "ready": False,
-        "error": "",
-        "video_path": "",
-        "started_at": time.time(),
-        "finished_at": 0,
-    })
-    # 清空/创建日志
-    _job_log_path(job_id).write_text("", encoding="utf-8")
-
-    def worker():
-        try:
-            run_adnerf = os.path.join(project_root, "AD-NeRF", "run_adnerf.sh")
-
-            # 保险：显式 bash 调脚本（避免 chmod / shebang 问题）
-            cmd = [
-                "bash", run_adnerf, "infer",
-                "--id", person_id,
-                "--aud_file", in_audio,
-                "--test_size", str(test_size),
-            ]
-
-            _append_job_log(job_id, f"[backend] CMD: {' '.join(cmd)}")
-
-            env = os.environ.copy()
-            env["PYTHONUNBUFFERED"] = "1"  # 让 python 日志更实时
-
-            p = subprocess.Popen(
-                cmd,
-                cwd=os.path.join(project_root, "AD-NeRF"),
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                text=True,
-                bufsize=1,
-                env=env,
-            )
-
-            assert p.stdout is not None
-            for line in p.stdout:
-                _append_job_log(job_id, line.rstrip("\n"))
-
-            rc = p.wait()
-            _append_job_log(job_id, f"[backend] process exited with code {rc}")
-            if rc != 0:
-                raise RuntimeError(f"AD-NeRF infer failed, exit={rc}")
-
-            # 按你现有规则找输出：dataset/<ID>/render_out/<name>.mp4
-            name = _stem_from_audio_path(in_audio)  # 你已有这个函数
-            render_dir = os.path.join(project_root, "AD-NeRF", "dataset", person_id, "render_out")
-            source_path = os.path.join(render_dir, f"{name}.mp4")
-            if not os.path.exists(source_path):
-                raise FileNotFoundError(f"未找到输出视频: {source_path}")
-
-            os.makedirs(static_videos_dir, exist_ok=True)
-            destination_name = f"adnerf_{person_id}_{name}.mp4"
-            destination_path = os.path.join(static_videos_dir, destination_name)
-            shutil.copy(source_path, destination_path)
-
-            rel_path = os.path.join("static", "videos", destination_name).replace("\\", "/")
-            _append_job_log(job_id, f"[backend] DONE video: /{rel_path}")
-
-            _write_job(job_id, {
-                "ready": True,
-                "error": "",
-                "video_path": rel_path,  # 你前端 pollVideo 会自己加 '/'
-                "started_at": _read_job(job_id).get("started_at", time.time()),
-                "finished_at": time.time(),
-            })
-
-        except Exception as e:
-            _append_job_log(job_id, f"[backend] ERROR: {e}")
-            _write_job(job_id, {
-                "ready": True,
-                "error": str(e),
-                "video_path": "",
-                "started_at": _read_job(job_id).get("started_at", time.time()),
-                "finished_at": time.time(),
-            })
-
-    threading.Thread(target=worker, daemon=True).start()
-    return job_id
+    # 兜底：未知模型别“假成功”
+    raise ValueError(f"未知 model_name: {data.get('model_name')}")

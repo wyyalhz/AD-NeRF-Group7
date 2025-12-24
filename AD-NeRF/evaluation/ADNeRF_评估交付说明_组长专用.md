@@ -24,7 +24,7 @@
 ### 环境准备（仅需一次）
 ```bash
 conda activate adnerf_pre
-pip install pytorch-fid face-alignment
+pip install pytorch-fid face-alignment matplotlib
 ```
 
 ### 运行评估

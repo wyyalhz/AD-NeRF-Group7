@@ -27,8 +27,17 @@ def video_generation():
             "test_size": request.form.get('test_size'),
         }
 
-        video_path = generate_video(data)
-        return jsonify({'status': 'success', 'video_path': video_path})
+        try:
+            video_path = generate_video(data)
+
+            # 统一成 URL 友好的路径：/static/...
+            video_path = (video_path or "").replace("\\", "/")
+            if video_path and not video_path.startswith("/"):
+                video_path = "/" + video_path
+
+            return jsonify({'status': 'success', 'video_path': video_path})
+        except Exception as e:
+            return jsonify({'status': 'error', 'message': str(e)}), 500
 
     return render_template('video_generation.html')
 
