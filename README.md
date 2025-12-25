@@ -6,12 +6,12 @@
 
 ```mermaid
 flowchart TD
-A[用户点击“生成视频”】【前端】] --> B[fetch 发送 POST]
-B --> C[Flask 路由接收 request.form]
-C --> D[调用 backend/video_generator.py: generate_video()]
-D --> E[返回生成视频路径]
-E --> F[Flask 返回 JSON]
-F --> G[前端替换 video.src 并播放]
+  A["用户点击 生成视频（前端）"] --> B["前端 fetch：POST /generate_video"]
+  B --> C["Flask 路由：读取 request.form"]
+  C --> D["调用 backend/video_generator.py::generate_video()"]
+  D --> E["返回生成视频路径 video_path"]
+  E --> F["Flask 返回 JSON：{ ok, video_url }"]
+  F --> G["前端设置 video.src 并播放"]
 ```
 
 ## 核心模块
