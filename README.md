@@ -15,12 +15,13 @@ F --> G[前端替换 video.src 并播放]
 ```
 
 ## 核心模块
+- **模型文件**:./AD-NeRF存放了模型代码，同时有模型专属README，Modelscope上存放了模型docker镜像[appdocker-web.tar.gz](https://modelscope.cn/models/wyyalhz/AD-NeRF-12-02/files)
 - **训练后端**: `./backend/model_trainer.py` - 负责调用模型执行训练任务
 - **推理后端**: `./backend/video_generator.py` - 负责调用模型执行视频生成推理
 
 ## 使用方法
 
-使用项目中的AD-NeRF代码并按照AD-NeRF目录下的模型专属Readme手动配置环境，或者下载[模型封装后的docker](https://modelscope.cn/models/wyyalhz/AD-NeRF-12-02/files)并放入AD-NeRF解压(太大了，有10个G，不是很推荐)
+使用项目中的AD-NeRF代码并按照AD-NeRF目录下的模型专属Readme手动配置环境，或者下载模型docker镜像[appdocker-web.tar.gz](https://modelscope.cn/models/wyyalhz/AD-NeRF-12-02/files)并放入AD-NeRF解压(太大了，有10个G，不是很推荐)
 
 1. 环境搭建：
    ```bash
