@@ -1,5 +1,5 @@
-# python data_util/process_data.py --id=$1 --step=0 &
-python data_util/process_data.py --id=$1 --step=1
+conda run -n adnerf_ds python data_util/process_data.py --id=$1 --step=0 &
+conda run -n adnerf_pre python data_util/process_data.py --id=$1 --step=1
 python data_util/process_data.py --id=$1 --step=2
 python data_util/process_data.py --id=$1 --step=6 &
 python data_util/process_data.py --id=$1 --step=3
