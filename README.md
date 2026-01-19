@@ -1,5 +1,7 @@
 # 说话人脸生成对话系统
 
+BIT 2025-2026-1 语义识别与合成 课程大作业
+
 本项目基于[AD-NeRF模型](https://github.com/wyyalhz/Reproduce-of-AD-NeRF)和[Genie-TTS](https://github.com/High-Logic/Genie-TTS)实现（不太）实时说话人脸生成对话系统
 
 ## 系统流程
@@ -46,4 +48,5 @@ flowchart TD
    ```
 
 4. 本地访问应用：
+
    打开 http://127.0.0.1:6006/
